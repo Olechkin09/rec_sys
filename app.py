@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np 
+import math
 import streamlit as st
 
 #Информация о последней статье
@@ -38,7 +39,7 @@ def rec_system (reader):
         for article in interest_list:
             if matrix[article][reader] == 1:
                 s = s + 1
-        if s >= len(interest_list)/2:
+        if s >= math.ceil(len(interest_list)/2):
             similar_readers.append(reader)
             s = 0  
         else: 
@@ -53,13 +54,12 @@ def rec_system (reader):
                 unique.append(l)
         return unique 
     rec_list = get_unique_items(rec_list)
-    rec_list  = [x for x in rec_list  if str(x) != interest_list]
+    for interest in interest_list:
+        rec_list = ([x for x in rec_list  if str(x) != interest])
     if len(rec_list) < 15:
         theme = ((clients_la.loc[clients_la.article == last_article])['theme']).values[0]
         popular_articles = (popular_articles_all.loc[popular_articles_all.theme == theme])['articles'].tolist()
         rec_list = get_unique_items(rec_list +  popular_articles + popular_articles_list)
-    for interest in interest_list:
-        rec_list = ([x for x in rec_list  if str(x) != interest])
     rec_list = rec_list[0:15]
     return rec_list
 
