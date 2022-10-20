@@ -7,6 +7,9 @@ import streamlit as st
 clients_la = pd.read_csv('http://89.108.110.60:3000/public/question/8b6c2d50-32b2-4e9c-a65a-e874d593987b.csv',sep=',')
 counter = len(clients_la.reader.unique().tolist())
 
+st.header('Выбор клиента')
+st.write("На данный момент в списке " + str(counter) + " читателя")
+
 #Новые статьи популярных тем - для холодного старта
 popular_articles = pd.read_csv('http://89.108.110.60:3000/public/question/5cc100e7-5512-4813-92cc-060313f202b5.csv',sep=',')
 popular_articles_list = popular_articles.articles.tolist()
@@ -21,12 +24,6 @@ def get_matrix():
   matrix = df.pivot_table(index='reader', columns='article', values='num', aggfunc=np.sum).fillna(0)
   return matrix
 matrix_for_search = get_matrix()
-
-
-st.title('Рекомендательная система RBC')
-st.header('Выбор клиента')
-st.write("На данный момент в списке " + str(counter) + " читателя")
-selected_reader = st.selectbox("Выберите читателя", clients_la['reader'].unique())
 
 def rec_system (reader):
     interest_list = ((clients_la.loc[clients_la.reader == reader])['article']).tolist()
@@ -63,24 +60,25 @@ def rec_system (reader):
     rec_list = rec_list[0:15]
     return rec_list
 
-st.write("Поиск начнется по клику на кнопку")
-find_button = st.button("Подыскать рекомендацию")
-if find_button:
-    st.write(f"Выбранный клиент: {selected_reader!r}")
-    la = (clients_la.loc[clients_la.reader == selected_reader])['article'].values[0]
-    st.write(f"Последняя статья:  {la!r}")
+def reader_changed():
+    st.subheader('Сформирован список для ' + st.session_state.reader)
+    rec_list = rec_system (st.session_state.reader)
+    st.write("Выбранный клиент: " + st.session_state.reader)
+    la = (clients_la.loc[clients_la.reader == st.session_state.reader])['article'].values[0]
+    st.write ("Последняя статья: " + la)
     st.write('_**Что можно порекомендовать:**_')
-    rec_list = rec_system(selected_reader)
     for j in range( len(rec_list)):
-        st.write( str(j + 1) + '. ' + rec_list[j])
-    
+        st.write( str(j + 1) + '. ' + rec_list[j]) 
     df = pd.DataFrame(rec_list)
     df.columns = ['Список рекомендаций']
     df.index = range(1,16)
     df = df.to_csv().encode('utf-8')
-    st.download_button( label="Скачать список", data=df, file_name= 'rec_list_'+ selected_reader +'.csv', mime='text/csv')
-    st.write('Список будет скачан в csv формате, открывайте его через приложение "Блокнот"')
+    st.download_button( label="Скачать список", data=df, file_name= 'rec_list_'+ st.session_state.reader +'.csv', mime='text/csv')
+    st.write('Список будет скачан в csv формате, открывайте его через приложение "Блокнот"')   
+
+reader = st.selectbox("Список рекомендаций появится сверху после выбора читателя", clients_la.reader.unique().tolist(), key="reader", on_change=reader_changed)
 st.markdown("___")
+
 
 st.header('Для прочих клиентов')
 st.write("Можно _**порекомендовать статьи**_, ставшие популярными за последние 3 дня: ")
